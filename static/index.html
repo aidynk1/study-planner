@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f7f7fb">
+    <title>Учебный планер</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <script src="/static/app.js" defer></script>
+  </head>
+  <body>
+    <main class="page">
+      <header class="header">
+        <div>
+          <p class="eyebrow">ТВОЙ УЧЕБНЫЙ ПРОЕКТ</p>
+          <h1>Учебный планер</h1>
+          <p class="subtitle">Собери учебные задачи в одном месте и двигайся по плану.</p>
+        </div>
+        <div class="summary" aria-live="polite">
+          <span id="task-count">0 задач</span>
+        </div>
+      </header>
+
+      <section class="panel" aria-labelledby="new-task-title">
+        <h2 id="new-task-title">Новая задача</h2>
+        <form id="task-form">
+          <label>
+            Название
+            <input name="title" maxlength="200" placeholder="Например, подготовить доклад" required>
+          </label>
+          <label>
+            Описание
+            <textarea name="description" maxlength="2000" rows="3" placeholder="Что нужно сделать?"></textarea>
+          </label>
+          <div class="form-row">
+            <label>
+              Дедлайн
+              <input name="due_date" type="date">
+            </label>
+            <button class="button button-primary" type="submit">Добавить задачу</button>
+          </div>
+          <p id="form-error" class="error" role="alert"></p>
+        </form>
+      </section>
+
+      <section class="tasks-section" aria-labelledby="tasks-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">ТВОЙ СПИСОК</p>
+            <h2 id="tasks-title">Задачи</h2>
+          </div>
+          <label class="filter-label">
+            Показать
+            <select id="status-filter">
+              <option value="">Все задачи</option>
+              <option value="planned">Запланированные</option>
+              <option value="in_progress">В работе</option>
+              <option value="done">Готовые</option>
+            </select>
+          </label>
+        </div>
+        <p id="page-error" class="error" role="alert"></p>
+        <div id="task-list" class="task-list" aria-live="polite"></div>
+      </section>
+    </main>
+  </body>
+</html>
