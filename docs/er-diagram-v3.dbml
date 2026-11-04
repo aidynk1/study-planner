@@ -17,6 +17,10 @@ Table tasks {
   created_at timestamp [not null]
   updated_at timestamp [not null]
 
+  checks {
+    `status IN ('planned', 'in_progress', 'done')` [name: 'ck_tasks_status']
+  }
+
   indexes {
     (user_id, status) [name: 'ix_tasks_user_status']
     due_date [name: 'ix_tasks_due_date']
