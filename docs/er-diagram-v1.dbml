@@ -1,0 +1,12 @@
+
+Table users {
+  id integer [pk, increment]
+}
+
+Table tasks {
+  id integer [pk, increment]
+  user_id integer [not null]
+  title varchar(200) [not null]
+}
+
+Ref: tasks.user_id > users.id
