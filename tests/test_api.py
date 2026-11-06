@@ -1,3 +1,5 @@
+import sqlite3
+
 from fastapi.testclient import TestClient
 
 from app.main import create_app
@@ -25,7 +27,36 @@ def test_task_crud_and_filter(tmp_path):
         assert task["due_date"] == "2026-11-01"
 
         task_id = task["id"]
+        with sqlite3.connect(tmp_path / "test.db") as connection:
+            assert connection.execute("SELECT COUNT(*) FROM tasks").fetchone()[0] == 1
         assert client.get(f"/api/tasks/{task_id}").json()["id"] == task_id
+
+        replaced = client.put(
+            f"/api/tasks/{task_id}",
+            json={
+                "title": "Сдать доклад",
+                "description": "Добавить выводы",
+                "due_date": "2026-11-03",
+                "status": "in_progress",
+            },
+        )
+        assert replaced.status_code == 200
+        assert replaced.json()["title"] == "Сдать доклад"
+        assert replaced.json()["description"] == "Добавить выводы"
+        assert replaced.json()["due_date"] == "2026-11-03"
+        assert replaced.json()["status"] == "in_progress"
+        with sqlite3.connect(tmp_path / "test.db") as connection:
+            assert connection.execute(
+                "SELECT title FROM tasks WHERE id = ?", (task_id,)
+            ).fetchone()[0] == "Сдать доклад"
+
+        replaced_with_defaults = client.put(
+            f"/api/tasks/{task_id}", json={"title": "Сданный доклад"}
+        )
+        assert replaced_with_defaults.status_code == 200
+        assert replaced_with_defaults.json()["description"] == ""
+        assert replaced_with_defaults.json()["due_date"] is None
+        assert replaced_with_defaults.json()["status"] == "planned"
 
         updated = client.patch(
             f"/api/tasks/{task_id}",
@@ -44,6 +75,8 @@ def test_task_crud_and_filter(tmp_path):
 
         assert client.delete(f"/api/tasks/{task_id}").status_code == 204
         assert client.get(f"/api/tasks/{task_id}").status_code == 404
+        with sqlite3.connect(tmp_path / "test.db") as connection:
+            assert connection.execute("SELECT COUNT(*) FROM tasks").fetchone()[0] == 0
 
 
 def test_invalid_task_data_is_rejected(tmp_path):
@@ -53,6 +86,9 @@ def test_invalid_task_data_is_rejected(tmp_path):
             "/api/tasks", json={"title": "Задача", "status": "unknown"}
         ).status_code == 422
         assert client.patch("/api/tasks/999", json={}).status_code == 422
+        assert client.put(
+            "/api/tasks/999", json={"title": "Несуществующая"}
+        ).status_code == 404
         created = client.post("/api/tasks", json={"title": "Задача"}).json()
         task_id = created["id"]
         assert client.patch(
@@ -60,6 +96,9 @@ def test_invalid_task_data_is_rejected(tmp_path):
         ).status_code == 422
         assert client.patch(
             f"/api/tasks/{task_id}", json={"status": None}
+        ).status_code == 422
+        assert client.put(
+            f"/api/tasks/{task_id}", json={"title": "   "}
         ).status_code == 422
 
 

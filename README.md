@@ -73,8 +73,11 @@ python seed.py
 | `GET` | `/api/tasks` | Список задач; необязательный фильтр `?status=planned` |
 | `POST` | `/api/tasks` | Создать задачу |
 | `GET` | `/api/tasks/{id}` | Получить задачу |
+| `PUT` | `/api/tasks/{id}` | Полностью заменить поля задачи |
 | `PATCH` | `/api/tasks/{id}` | Изменить переданные поля |
 | `DELETE` | `/api/tasks/{id}` | Удалить задачу, ответ `204` |
+
+Для ручной проверки CRUD в Postman импортируйте `postman/study-planner-crud.postman_collection.json`, запустите сервер и выполните коллекцию на `http://localhost:8000`. Postman-тесты проверяют ответы и состояние ресурса после создания, замены и удаления.
 
 Пример создания:
 

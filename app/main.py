@@ -29,6 +29,13 @@ class TaskUpdate(BaseModel):
     status: TaskStatus | None = None
 
 
+class TaskReplace(BaseModel):
+    title: str = Field(min_length=1, max_length=200)
+    description: str = Field(default="", max_length=2000)
+    due_date: date | None = None
+    status: TaskStatus = "planned"
+
+
 class TaskRead(BaseModel):
     id: int
     title: str
@@ -162,6 +169,41 @@ def create_app(database_path: str | None = None) -> FastAPI:
         ).fetchone()
         if row is None:
             raise HTTPException(status_code=404, detail="Задача не найдена.")
+        return task_values(row)
+
+    @application.put("/api/tasks/{task_id}", response_model=TaskRead)
+    def replace_task(
+        task_id: int,
+        task: TaskReplace,
+        connection: sqlite3.Connection = Depends(database_dependency),
+    ):
+        title = task.title.strip()
+        if not title:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Название задачи не может быть пустым.",
+            )
+        cursor = connection.execute(
+            """
+            UPDATE tasks
+            SET title = ?, description = ?, due_date = ?, status = ?, updated_at = ?
+            WHERE id = ?
+            """,
+            (
+                title,
+                task.description,
+                task.due_date.isoformat() if task.due_date else None,
+                task.status,
+                utc_now(),
+                task_id,
+            ),
+        )
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Задача не найдена.")
+        connection.commit()
+        row = connection.execute(
+            "SELECT * FROM tasks WHERE id = ?", (task_id,)
+        ).fetchone()
         return task_values(row)
 
     @application.patch("/api/tasks/{task_id}", response_model=TaskRead)
