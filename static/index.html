@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#f7f7fb">
     <title>Учебный планер</title>
-    <link rel="stylesheet" href="/static/styles.css">
-    <script src="/static/app.js" defer></script>
+    <link rel="stylesheet" href="/static/styles.css?v=2">
+    <script src="/static/app.js?v=2" defer></script>
   </head>
   <body>
     <main class="page">
@@ -20,6 +20,21 @@
           <span id="task-count">0 задач</span>
         </div>
       </header>
+
+      <section class="focus-section" aria-labelledby="study-focus-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">СЛЕДУЮЩИЙ ШАГ</p>
+            <h2 id="study-focus-title">Фокус учёбы</h2>
+          </div>
+          <button id="refresh-focus" class="button button-secondary" type="button">
+            Обновить фокус
+          </button>
+        </div>
+        <div id="study-focus" aria-live="polite">
+          <p class="empty-state">Подбираем задачу для фокуса…</p>
+        </div>
+      </section>
 
       <section class="panel" aria-labelledby="new-task-title">
         <h2 id="new-task-title">Новая задача</h2>

@@ -86,7 +86,8 @@ h2 {
 
 .summary,
 .panel,
-.task-card {
+.task-card,
+.focus-card {
   border: 1px solid var(--line);
   border-radius: 18px;
   background: #fff;
@@ -180,6 +181,34 @@ select:focus {
 
 .tasks-section {
   margin-top: 38px;
+}
+
+.focus-section {
+  margin-bottom: 32px;
+}
+
+.focus-section .section-heading {
+  margin-bottom: 14px;
+}
+
+.focus-section .section-heading h2 {
+  margin-bottom: 0;
+}
+
+.focus-card {
+  padding: 20px;
+  border-color: #f0d7b8;
+  background: linear-gradient(120deg, #fff 0%, #fff8f0 100%);
+}
+
+.focus-card .task-date {
+  margin: 8px 0;
+}
+
+.focus-reason {
+  margin: 0;
+  color: #56627a;
+  font-size: 14px;
 }
 
 .section-heading {
