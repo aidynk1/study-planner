@@ -1,4 +1,5 @@
 import sqlite3
+from datetime import date, timedelta
 
 from fastapi.testclient import TestClient
 
@@ -102,8 +103,67 @@ def test_invalid_task_data_is_rejected(tmp_path):
         ).status_code == 422
 
 
+def test_active_task_limit_is_enforced(tmp_path):
+    with make_client(tmp_path) as client:
+        task_ids = []
+        for task_number in range(50):
+            response = client.post(
+                "/api/tasks", json={"title": f"Задача {task_number}"}
+            )
+            assert response.status_code == 201
+            task_ids.append(response.json()["id"])
+
+        assert client.post(
+            "/api/tasks", json={"title": "Лишняя задача"}
+        ).status_code == 409
+        assert client.patch(
+            f"/api/tasks/{task_ids[0]}", json={"status": "done"}
+        ).status_code == 200
+        assert client.post(
+            "/api/tasks", json={"title": "Новая задача"}
+        ).status_code == 201
+        assert client.patch(
+            f"/api/tasks/{task_ids[0]}", json={"status": "planned"}
+        ).status_code == 409
+
+
+def test_study_focus_prioritizes_earliest_deadline(tmp_path):
+    with make_client(tmp_path) as client:
+        later_deadline = (date.today() + timedelta(days=20)).isoformat()
+        earlier_deadline = (date.today() + timedelta(days=10)).isoformat()
+        client.post(
+            "/api/tasks",
+            json={"title": "Позже", "due_date": later_deadline},
+        )
+        first = client.post(
+            "/api/tasks",
+            json={"title": "Ближайший срок", "due_date": earlier_deadline},
+        )
+        client.post("/api/tasks", json={"title": "Без срока"})
+
+        focus = client.get("/api/tasks/focus")
+        assert focus.status_code == 200
+        assert focus.json()["task"]["id"] == first.json()["id"]
+        assert "близкий дедлайн" in focus.json()["reason"]
+
+        assert client.patch(
+            f"/api/tasks/{first.json()['id']}", json={"status": "done"}
+        ).status_code == 200
+        assert client.get("/api/tasks/focus").json()["task"]["title"] == "Позже"
+
+        assert client.patch(
+            "/api/tasks/1", json={"status": "done"}
+        ).status_code == 200
+        assert client.patch(
+            "/api/tasks/3", json={"status": "done"}
+        ).status_code == 200
+        assert client.get("/api/tasks/focus").status_code == 404
+
+
 def test_homepage_and_api_documentation_are_available(tmp_path):
     with make_client(tmp_path) as client:
         assert client.get("/").status_code == 200
-        assert "Учебный планер" in client.get("/").text
+        homepage = client.get("/").text
+        assert "Учебный планер" in homepage
+        assert 'id="study-focus"' in homepage
         assert client.get("/docs").status_code == 200

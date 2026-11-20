@@ -4,6 +4,8 @@ const statusFilter = document.querySelector("#status-filter");
 const taskCount = document.querySelector("#task-count");
 const formError = document.querySelector("#form-error");
 const pageError = document.querySelector("#page-error");
+const studyFocus = document.querySelector("#study-focus");
+const refreshFocus = document.querySelector("#refresh-focus");
 
 const statusLabels = {
   planned: "Запланирована",
@@ -25,9 +27,50 @@ async function request(path, options = {}) {
   });
   if (!response.ok) {
     const payload = await response.json().catch(() => ({}));
-    throw new Error(payload.detail || "Не удалось выполнить запрос.");
+    const error = new Error(payload.detail || "Не удалось выполнить запрос.");
+    error.status = response.status;
+    throw error;
   }
   return response.status === 204 ? null : response.json();
+}
+
+function renderStudyFocus(focus) {
+  const card = document.createElement("article");
+  card.className = "focus-card";
+
+  const title = document.createElement("h3");
+  title.className = "task-title";
+  title.textContent = focus.task.title;
+
+  const details = document.createElement("p");
+  details.className = "task-date";
+  const dueDate = focus.task.due_date
+    ? `Дедлайн: ${new Date(`${focus.task.due_date}T00:00:00`).toLocaleDateString("ru-RU")}`
+    : "Без дедлайна";
+  details.textContent = `${statusLabels[focus.task.status]} · ${dueDate}`;
+
+  const reason = document.createElement("p");
+  reason.className = "focus-reason";
+  reason.textContent = focus.reason;
+
+  card.append(title, details, reason);
+  studyFocus.replaceChildren(card);
+}
+
+async function loadStudyFocus() {
+  studyFocus.replaceChildren();
+  try {
+    const focus = await request("/api/tasks/focus");
+    renderStudyFocus(focus);
+  } catch (error) {
+    const message = error.status === 404
+      ? "Пока нет активных задач. Добавь задачу, и здесь появится следующий шаг."
+      : error.message;
+    const empty = document.createElement("p");
+    empty.className = error.status === 404 ? "empty-state" : "error";
+    empty.textContent = message;
+    studyFocus.replaceChildren(empty);
+  }
 }
 
 function makeButton(label, className, onClick) {
@@ -167,6 +210,7 @@ async function loadTasks() {
   const query = status ? `?status=${encodeURIComponent(status)}` : "";
   try {
     const tasks = await request(`/api/tasks${query}`);
+    await loadStudyFocus();
     taskList.replaceChildren();
     taskCount.textContent = `${tasks.length} ${tasks.length === 1 ? "задача" : "задач"}`;
     if (tasks.length === 0) {
@@ -203,4 +247,5 @@ taskForm.addEventListener("submit", async (event) => {
 });
 
 statusFilter.addEventListener("change", loadTasks);
+refreshFocus.addEventListener("click", loadStudyFocus);
 loadTasks();
